@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="InvenFlow.Api/InvenFlow.Api.csproj" />
+  <Project Path="InvenFlow.Core/InvenFlow.Core.csproj" />
+  <Project Path="InvenFlow.Infrastructure/InvenFlow.Infrastructure.csproj" />
+</Solution>
