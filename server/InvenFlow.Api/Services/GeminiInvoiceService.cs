@@ -25,9 +25,28 @@ public class GeminiInvoiceService
 {
     private readonly string _apiKey;
 
-    public GeminiInvoiceService(IConfiguration configuration)
+    public GeminiInvoiceService(IConfiguration configuration, ILogger<GeminiInvoiceService> logger)
     {
-        _apiKey = configuration["Gemini:ApiKey"] ?? throw new ArgumentNullException("Gemini API key is missing.");
+        var keyFromConfig = configuration["Gemini:ApiKey"];
+        var keyFromEnv = configuration["GOOGLE_API_KEY"];
+        var apiKey = keyFromConfig ?? keyFromEnv;
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException(
+                "Gemini API key is missing. Set Gemini:ApiKey in appsettings.Local.json or the Gemini__ApiKey / GOOGLE_API_KEY environment variable.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyFromConfig))
+        {
+            logger.LogInformation("Using Gemini API key from configuration path Gemini:ApiKey.");
+        }
+        else
+        {
+            logger.LogInformation("Using Gemini API key from environment variable GOOGLE_API_KEY.");
+        }
+
+        _apiKey = apiKey;
     }
 
     public async Task<ExtractedInvoiceData?> ProcessInvoiceAsync(string filePath)
@@ -36,8 +55,8 @@ public class GeminiInvoiceService
 
         // Explicitly use System.IO.File to prevent namespace collision with Google.GenAI.Types.File
         byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-        string mimeType = filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) 
-            ? "application/pdf" 
+        string mimeType = filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+            ? "application/pdf"
             : "image/jpeg";
 
         var promptText = @"

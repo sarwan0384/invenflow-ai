@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Load optional local settings last so developers can keep secrets out of source control.
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
 
 // 1. Configure CORS policy for React frontend
 builder.Services.AddCors(options =>
