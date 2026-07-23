@@ -1,3 +1,5 @@
+import type { InventoryItem, InboundDocument, Vendor } from '../types';
+
 const API_BASE_URL = 'http://localhost:5206/api';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -30,11 +32,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function getInventory() {
-  return request<any[]>('/inventoryitems');
+  return request<InventoryItem[]>('/inventoryitems');
 }
 
 export async function createInventoryItem(payload: Record<string, unknown>) {
-  return request<any>('/inventoryitems', {
+  return request<InventoryItem>('/inventoryitems', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -42,7 +44,7 @@ export async function createInventoryItem(payload: Record<string, unknown>) {
 }
 
 export async function updateInventoryItem(id: string, payload: Record<string, unknown>) {
-  return request<any>(`/inventoryitems/${id}`, {
+  return request<InventoryItem>(`/inventoryitems/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -56,11 +58,11 @@ export async function deleteInventoryItem(id: string) {
 }
 
 export async function getVendors() {
-  return request<any[]>('/vendors');
+  return request<Vendor[]>('/vendors');
 }
 
 export async function createVendor(payload: Record<string, unknown>) {
-  return request<any>('/vendors', {
+  return request<Vendor>('/vendors', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -68,7 +70,7 @@ export async function createVendor(payload: Record<string, unknown>) {
 }
 
 export async function updateVendor(id: string, payload: Record<string, unknown>) {
-  return request<any>(`/vendors/${id}`, {
+  return request<Vendor>(`/vendors/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -82,18 +84,18 @@ export async function deleteVendor(id: string) {
 }
 
 export async function getDocuments() {
-  return request<any[]>('/inbounddocuments');
+  return request<InboundDocument[]>('/inbounddocuments');
 }
 
 export async function uploadDocument(formData: FormData) {
-  return request<any>('/inbounddocuments/upload', {
+  return request<InboundDocument>('/inbounddocuments/upload', {
     method: 'POST',
     body: formData,
   });
 }
 
 export async function processDocument(id: string) {
-  return request<any>(`/inbounddocuments/${id}/process-ai`, {
+  return request<InboundDocument>(`/inbounddocuments/${id}/process-ai`, {
     method: 'POST',
   });
 }

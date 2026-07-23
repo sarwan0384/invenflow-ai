@@ -11,6 +11,9 @@
 *.sln.docstates
 *.env
 
+# Local appsettings for .NET projects
+/server/InvenFlow.Api/appsettings.Local.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

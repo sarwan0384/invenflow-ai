@@ -26,7 +26,7 @@ const initialFormState: InventoryFormState = {
 
 export function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -39,7 +39,7 @@ export function InventoryPage() {
     setIsLoading(true);
     try {
       const data = await getInventory();
-      setItems(data as InventoryItem[]);
+      setItems(data);
     } catch {
       setItems([]);
       setFeedback({ type: 'error', message: 'Unable to load inventory right now.' });
@@ -49,7 +49,28 @@ export function InventoryPage() {
   };
 
   useEffect(() => {
-    void loadItems();
+    let isMounted = true;
+
+    async function init() {
+      try {
+        const data = await getInventory();
+        if (!isMounted) return;
+        setItems(data);
+      } catch {
+        if (!isMounted) return;
+        setItems([]);
+        setFeedback({ type: 'error', message: 'Unable to load inventory right now.' });
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void init();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const statusBadge = useMemo(

@@ -32,7 +32,7 @@ const getStatusMeta = (status: number | string) => {
 export function DocumentsPage() {
   const [documents, setDocuments] = useState<InboundDocument[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +47,7 @@ export function DocumentsPage() {
     setIsLoading(true);
     try {
       const data = await getDocuments();
-      setDocuments(data as InboundDocument[]);
+      setDocuments(data);
     } catch {
       setDocuments([]);
       setFeedback({ type: 'error', message: 'Unable to load document queue.' });
@@ -56,18 +56,31 @@ export function DocumentsPage() {
     }
   };
 
-  const loadVendors = async () => {
-    try {
-      const data = await getVendors();
-      setVendors(data as Vendor[]);
-    } catch {
-      setVendors([]);
-    }
-  };
-
   useEffect(() => {
-    void loadDocuments();
-    void loadVendors();
+    let isMounted = true;
+
+    async function init() {
+      try {
+        const [documentsData, vendorsData] = await Promise.all([getDocuments(), getVendors()]);
+        if (!isMounted) return;
+        setDocuments(documentsData);
+        setVendors(vendorsData);
+      } catch {
+        if (!isMounted) return;
+        setDocuments([]);
+        setVendors([]);
+        setFeedback({ type: 'error', message: 'Unable to load document queue.' });
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void init();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
