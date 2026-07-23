@@ -1,5 +1,8 @@
 import { BarChart3, Boxes, FileText, LayoutGrid, Package2, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { getDocuments } from '../../services/api';
+import type { InboundDocument } from '../../types';
 import { cn } from '../../lib/utils';
 
 const navItems = [
@@ -14,6 +17,25 @@ type Props = { active?: string };
 
 export function LeftSidebar({ active = '/' }: Props) {
   const [collapsed, setCollapsed] = useState(false);
+  const [documents, setDocuments] = useState<InboundDocument[]>([]);
+
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        const data = await getDocuments();
+        setDocuments(data as InboundDocument[]);
+      } catch {
+        setDocuments([]);
+      }
+    };
+
+    void loadDocuments();
+  }, []);
+
+  const processedCount = documents.filter((document) => {
+    const normalized = typeof document.status === 'number' ? document.status : String(document.status).toLowerCase();
+    return normalized === 2 || normalized === 'processed';
+  }).length;
 
   return (
     <aside className={cn('hidden border-r border-white/10 bg-slate-950/80 backdrop-blur-xl lg:flex lg:flex-col', collapsed ? 'w-20' : 'w-72')}>
@@ -34,10 +56,10 @@ export function LeftSidebar({ active = '/' }: Props) {
           const Icon = item.icon;
           const isActive = active === item.href;
           return (
-            <a key={item.href} href={item.href} className={cn('flex items-center gap-3 rounded-2xl px-3 py-3 text-sm transition-all', isActive ? 'bg-violet-500/15 text-white shadow-inner shadow-violet-500/10' : 'text-slate-400 hover:bg-white/10 hover:text-white')}>
+            <Link key={item.href} to={item.href} className={cn('flex items-center gap-3 rounded-2xl px-3 py-3 text-sm transition-all', isActive ? 'bg-violet-500/15 text-white shadow-inner shadow-violet-500/10' : 'text-slate-400 hover:bg-white/10 hover:text-white')}>
               <Icon className="h-4 w-4" />
               {!collapsed ? <span>{item.label}</span> : null}
-            </a>
+            </Link>
           );
         })}
       </nav>
@@ -45,7 +67,7 @@ export function LeftSidebar({ active = '/' }: Props) {
       <div className="border-t border-white/10 p-4">
         <div className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-3 text-sm text-slate-200">
           <p className="font-medium">AI sync online</p>
-          <p className="mt-1 text-xs text-slate-400">31 docs processed today</p>
+          <p className="mt-1 text-xs text-slate-400">{processedCount} doc{processedCount === 1 ? '' : 's'} processed</p>
         </div>
       </div>
     </aside>

@@ -18,6 +18,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<InvenFlow.Api.Services.GeminiInvoiceService>();
 
 // 3. Register DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>

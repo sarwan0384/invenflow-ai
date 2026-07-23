@@ -19,6 +19,7 @@ public class InventoryController : ControllerBase
     // GET: api/inventory
     // Fetches all inventory items on the warehouse shelves
     [HttpGet]
+    [HttpGet("~/api/inventoryitems")]
     public async Task<ActionResult<IEnumerable<InventoryItem>>> GetInventory()
     {
         return await _context.InventoryItems.ToListAsync();
@@ -27,6 +28,7 @@ public class InventoryController : ControllerBase
     // GET: api/inventory/{id}
     // Fetches a single inventory item by ID
     [HttpGet("{id:guid}")]
+    [HttpGet("~/api/inventoryitems/{id:guid}")]
     public async Task<ActionResult<InventoryItem>> GetInventoryItem(Guid id)
     {
         var item = await _context.InventoryItems.FindAsync(id);
@@ -42,6 +44,7 @@ public class InventoryController : ControllerBase
     // POST: api/inventory
     // Adds a new product item into inventory
     [HttpPost]
+    [HttpPost("~/api/inventoryitems")]
     public async Task<ActionResult<InventoryItem>> CreateInventoryItem(InventoryItem item)
     {
         item.Id = Guid.NewGuid();
@@ -56,26 +59,39 @@ public class InventoryController : ControllerBase
     // PUT: api/inventory/{id}
     // Updates quantity or price for an existing inventory item
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateInventoryItem(Guid id, InventoryItem updatedItem)
+    [HttpPut("~/api/inventoryitems/{id:guid}")]
+    public async Task<IActionResult> UpdateInventoryItem(Guid id, [FromBody] InventoryItem updatedItem)
     {
-        if (id != updatedItem.Id)
-        {
-            return BadRequest(new { message = "ID mismatch." });
-        }
-
         var existingItem = await _context.InventoryItems.FindAsync(id);
         if (existingItem == null)
         {
             return NotFound(new { message = "Item not found." });
         }
 
-        existingItem.Name = updatedItem.Name;
-        existingItem.Sku = updatedItem.Sku;
-        existingItem.Category = updatedItem.Category;
+        existingItem.Name = string.IsNullOrWhiteSpace(updatedItem.Name) ? existingItem.Name : updatedItem.Name;
+        existingItem.Sku = string.IsNullOrWhiteSpace(updatedItem.Sku) ? existingItem.Sku : updatedItem.Sku;
+        existingItem.Category = string.IsNullOrWhiteSpace(updatedItem.Category) ? existingItem.Category : updatedItem.Category;
         existingItem.QuantityOnHand = updatedItem.QuantityOnHand;
         existingItem.UnitPrice = updatedItem.UnitPrice;
         existingItem.UpdatedAt = DateTime.UtcNow;
 
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // DELETE: api/inventory/{id}
+    [HttpDelete("{id:guid}")]
+    [HttpDelete("~/api/inventoryitems/{id:guid}")]
+    public async Task<IActionResult> DeleteInventoryItem(Guid id)
+    {
+        var existingItem = await _context.InventoryItems.FindAsync(id);
+        if (existingItem == null)
+        {
+            return NotFound(new { message = "Item not found." });
+        }
+
+        _context.InventoryItems.Remove(existingItem);
         await _context.SaveChangesAsync();
 
         return NoContent();

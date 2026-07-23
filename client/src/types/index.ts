@@ -19,6 +19,9 @@ export interface Vendor {
   name: string;
   code: string;
   email: string;
+  contactPerson?: string;
+  phoneNumber?: string;
+  address?: string;
   createdAt: string;
 }
 
@@ -26,7 +29,7 @@ export interface InboundDocument {
   id: string;
   fileName: string;
   fileUrl: string;
-  status: 'Uploaded' | 'Processing' | 'ReviewRequired' | 'Processed' | 'Failed';
+  status: number | string;
   vendorId?: string;
   vendor?: Vendor;
   confidenceScore: number;
