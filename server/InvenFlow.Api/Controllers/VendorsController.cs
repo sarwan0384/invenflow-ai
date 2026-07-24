@@ -1,5 +1,6 @@
 using InvenFlow.Core.Entities;
 using InvenFlow.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,7 @@ public class VendorUpdateRequest
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class VendorsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -30,17 +32,34 @@ public class VendorsController : ControllerBase
     // GET: api/vendors
     // Fetches all vendors from PostgreSQL
     [HttpGet]
+    [Authorize(Policy = "RequireEmployeeOrAbove")]
     public async Task<ActionResult<IEnumerable<Vendor>>> GetVendors()
     {
         return await _context.Vendors.ToListAsync();
     }
 
+    // Temporary debug route: bypass the tenant query filter to prove whether the filter is the source of the empty GET response.
+    [HttpGet("debug")]
+    [Authorize(Policy = "RequireEmployeeOrAbove")]
+    public async Task<ActionResult<IEnumerable<Vendor>>> GetVendorsDebug()
+    {
+        return await _context.Vendors.IgnoreQueryFilters().ToListAsync();
+    }
+
     // POST: api/vendors
     // Adds a new vendor into PostgreSQL
     [HttpPost]
+    [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<ActionResult<Vendor>> CreateVendor(Vendor vendor)
     {
+        var tenantId = User.FindFirst("tenantId")?.Value;
+        if (!Guid.TryParse(tenantId, out var parsedTenantId))
+        {
+            return Unauthorized(new { message = "Tenant context is missing." });
+        }
+
         vendor.Id = Guid.NewGuid();
+        vendor.TenantId = parsedTenantId;
         vendor.CreatedAt = DateTime.UtcNow;
 
         _context.Vendors.Add(vendor);
@@ -51,6 +70,7 @@ public class VendorsController : ControllerBase
 
     // PUT: api/vendors/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<IActionResult> UpdateVendor(Guid id, [FromBody] VendorUpdateRequest request)
     {
         var existingVendor = await _context.Vendors.FindAsync(id);
@@ -72,6 +92,7 @@ public class VendorsController : ControllerBase
 
     // DELETE: api/vendors/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> DeleteVendor(Guid id)
     {
         var vendor = await _context.Vendors.FindAsync(id);

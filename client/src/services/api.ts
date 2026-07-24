@@ -2,8 +2,35 @@ import type { InventoryItem, InboundDocument, Vendor } from '../types';
 
 const API_BASE_URL = 'http://localhost:5206/api';
 
+export function getStoredAuthToken() {
+  if (typeof window === 'undefined') return '';
+
+  try {
+    const stored = window.localStorage.getItem('invenflow-auth');
+    if (!stored) return '';
+    const parsed = JSON.parse(stored) as { token?: string };
+    return parsed.token ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function buildHeaders(init?: RequestInit) {
+  const headers = new Headers(init?.headers || {});
+  const token = getStoredAuthToken();
+
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return headers;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, init);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: buildHeaders(init),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -57,6 +84,20 @@ export async function deleteInventoryItem(id: string) {
   });
 }
 
+export interface SyncExternalUrlResult {
+  added: number;
+  updated: number;
+  sourceType: 'API' | 'Web' | 'AI';
+}
+
+export async function syncExternalUrl(payload: { url: string }) {
+  return request<SyncExternalUrlResult>('/sync/external-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getVendors() {
   return request<Vendor[]>('/vendors');
 }
@@ -81,6 +122,16 @@ export async function deleteVendor(id: string) {
   return request<void>(`/vendors/${id}`, {
     method: 'DELETE',
   });
+}
+
+export interface SearchResults {
+  inventory: Array<{ title: string; subtitle: string }>;
+  vendors: Array<{ title: string; subtitle: string }>;
+  documents: Array<{ title: string; subtitle: string }>;
+}
+
+export async function searchContent(query: string) {
+  return request<SearchResults>(`/search?q=${encodeURIComponent(query)}`);
 }
 
 export async function getDocuments() {

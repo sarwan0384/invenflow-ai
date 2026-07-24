@@ -8,9 +8,10 @@ public enum DocumentStatus
     Failed
 }
 
-public class InboundDocument
+public class InboundDocument : ITenantOwned
 {
     public Guid Id { get; set; }
+    public Guid TenantId { get; set; }
     public string FileName { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;
     public DocumentStatus Status { get; set; } = DocumentStatus.Pending;

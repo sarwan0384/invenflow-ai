@@ -51,7 +51,6 @@ export function InsightsPage() {
 
   const processedCount = useMemo(() => documents.filter((document) => isProcessed(document.status)).length, [documents]);
   const failedCount = useMemo(() => documents.filter((document) => isFailed(document.status)).length, [documents]);
-  const totalInboundValue = useMemo(() => documents.reduce((sum, document) => sum + (document.confidenceScore || 0), 0), [documents]);
   const accuracyRate = processedCount === 0 ? 0 : Math.max(0, Math.round((processedCount / Math.max(documents.length, 1)) * 100));
   const lowStockAlerts = useMemo(() => inventory.filter((item) => item.quantityOnHand <= 5).length, [inventory]);
   const summaryText = processedCount === 0

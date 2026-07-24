@@ -1,12 +1,13 @@
-import { Edit3, Trash2, UserPlus2 } from 'lucide-react';
+import { Edit3, Share2, Trash2, UserPlus2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AppLayout } from '../../components/shared/AppLayout';
-import { Badge } from '../../components/ui/Badge';
+import { DataTable } from '../../components/shared/DataTable';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { createVendor, deleteVendor, getVendors, updateVendor } from '../../services/api';
 import type { Vendor } from '../../types';
 import { cn, formatDate } from '../../lib/utils';
+import { useAuth } from '../../contexts/useAuth';
 
 type VendorFormState = {
   name: string;
@@ -27,6 +28,7 @@ const initialFormState: VendorFormState = {
 };
 
 export function VendorsPage() {
+  const { user } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +51,32 @@ export function VendorsPage() {
   };
 
   useEffect(() => {
-    void loadVendors();
+    let isMounted = true;
+
+    const run = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getVendors();
+        if (isMounted) {
+          setVendors(data as Vendor[]);
+        }
+      } catch {
+        if (isMounted) {
+          setVendors([]);
+          setFeedback({ type: 'error', message: 'Unable to load vendors right now.' });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const openCreateModal = () => {
@@ -127,10 +154,15 @@ export function VendorsPage() {
             <p className="text-sm text-slate-400">Supplier network</p>
             <h2 className="text-2xl font-semibold text-white">Vendor Intelligence</h2>
           </div>
-          <Button onClick={openCreateModal}>
-            <UserPlus2 className="mr-2 h-4 w-4" />
-            Add Vendor
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary">Export CSV</Button>
+            <Button variant="secondary">Export Excel</Button>
+            <Button variant="secondary">Export PDF</Button>
+            {(user?.role === 'Admin' || user?.role === 'Manager') ? <Button onClick={openCreateModal}>
+              <UserPlus2 className="mr-2 h-4 w-4" />
+              Add Vendor
+            </Button> : null}
+          </div>
         </div>
 
         {feedback ? (
@@ -146,34 +178,37 @@ export function VendorsPage() {
             No vendors yet. Add your first supplier to start the pipeline.
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {vendors.map((vendor) => (
-              <article key={vendor.id} className="rounded-[24px] border border-white/10 bg-slate-900/70 p-5 shadow-lg shadow-black/10 backdrop-blur-xl">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-semibold text-white">{vendor.name}</p>
-                    <p className="text-sm text-slate-400">{vendor.code || 'No code provided'}</p>
+          <DataTable
+            columns={[
+              { key: 'name', header: 'Name' },
+              { key: 'code', header: 'Code' },
+              { key: 'email', header: 'Email' },
+              { key: 'phoneNumber', header: 'Phone' },
+              { key: 'createdAt', header: 'Created', render: (value) => formatDate(String(value)) },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (_value, row) => (
+                  <div className="flex gap-2">
+                    {(user?.role === 'Admin' || user?.role === 'Manager') ? (
+                      <button type="button" onClick={() => openEditModal(row as unknown as Vendor)} className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200">
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200">
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                    {user?.role === 'Admin' ? (
+                      <button type="button" onClick={() => void handleDelete(row as unknown as Vendor)} className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2 text-rose-300">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
                   </div>
-                  <Badge tone="info">Active</Badge>
-                </div>
-                <div className="mt-5 space-y-2 text-sm text-slate-400">
-                  <p>Email: {vendor.email}</p>
-                  <p>Phone: {vendor.phoneNumber || '—'}</p>
-                  <p>Onboarded: {formatDate(vendor.createdAt)}</p>
-                </div>
-                <div className="mt-5 flex gap-2">
-                  <Button type="button" variant="secondary" onClick={() => openEditModal(vendor)}>
-                    <Edit3 className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => void handleDelete(vendor)}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
+                ),
+              },
+            ]}
+            rows={vendors as unknown as Array<Record<string, unknown>>}
+          />
         )}
       </div>
 

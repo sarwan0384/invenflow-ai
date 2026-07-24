@@ -1,12 +1,14 @@
-import { Sparkles, Trash2, UploadCloud } from 'lucide-react';
+import { Share2, Sparkles, Trash2, UploadCloud } from 'lucide-react';
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { AppLayout } from '../../components/shared/AppLayout';
+import { DataTable } from '../../components/shared/DataTable';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { deleteDocument, getDocuments, getVendors, processDocument, uploadDocument } from '../../services/api';
 import type { InboundDocument, Vendor } from '../../types';
 import { cn, formatDate } from '../../lib/utils';
+import { useAuth } from '../../contexts/useAuth';
 
 const getStatusMeta = (status: number | string) => {
   const normalized = typeof status === 'number' ? status : String(status).toLowerCase();
@@ -30,6 +32,7 @@ const getStatusMeta = (status: number | string) => {
 };
 
 export function DocumentsPage() {
+  const { user } = useAuth();
   const [documents, setDocuments] = useState<InboundDocument[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -165,10 +168,15 @@ export function DocumentsPage() {
             <p className="text-sm text-slate-400">Inbound document automation</p>
             <h2 className="text-2xl font-semibold text-white">Document Review Queue</h2>
           </div>
-          <Button onClick={() => setIsModalOpen(true)}>
-            <UploadCloud className="mr-2 h-4 w-4" />
-            Upload Document
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary">Export CSV</Button>
+            <Button variant="secondary">Export Excel</Button>
+            <Button variant="secondary">Export PDF</Button>
+            {(user?.role === 'Admin' || user?.role === 'Manager') ? <Button onClick={() => setIsModalOpen(true)}>
+              <UploadCloud className="mr-2 h-4 w-4" />
+              Upload Document
+            </Button> : null}
+          </div>
         </div>
 
         {feedback ? (
@@ -177,53 +185,42 @@ export function DocumentsPage() {
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-slate-900/70 shadow-lg shadow-black/10 backdrop-blur-xl">
-          {isLoading ? (
-            <div className="p-8 text-center text-sm text-slate-400">Loading document queue…</div>
-          ) : documents.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-400">No documents queued yet.</div>
-          ) : (
-            <div className="divide-y divide-white/10">
-              {documents.map((document) => {
-                const statusMeta = getStatusMeta(document.status);
-                return (
-                  <div key={document.id} className="flex flex-col gap-4 p-5 text-sm text-slate-300 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-semibold text-white">{document.fileName}</h3>
-                        <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>
-                      </div>
-                      <p className="text-slate-400">
-                        Confidence: {(document.confidenceScore * 100).toFixed(0)}% • Vendor: {document.vendor?.name ?? 'Unassigned'}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-slate-400">
-                      <span>{formatDate(document.uploadedAt)}</span>
-                      {statusMeta.canProcess ? (
-                        <Button type="button" variant="secondary" loading={isProcessing === document.id} onClick={() => void handleProcess(document)}>
-                          <Sparkles className="mr-2 h-4 w-4" />
-                          Process with AI
-                        </Button>
-                      ) : null}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="border-rose-500/20 text-rose-300 hover:bg-rose-500/10"
-                        onClick={() => {
-                          setDocumentToDelete(document);
-                          setIsDeleteModalOpen(true);
-                        }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </Button>
-                    </div>
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-slate-400">Loading document queue…</div>
+        ) : documents.length === 0 ? (
+          <div className="p-8 text-center text-sm text-slate-400">No documents queued yet.</div>
+        ) : (
+          <DataTable
+            columns={[
+              { key: 'fileName', header: 'File' },
+              { key: 'status', header: 'Status', render: (value) => { const statusMeta = getStatusMeta(value as string | number); return <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>; } },
+              { key: 'confidenceScore', header: 'Confidence', render: (value) => `${(Number(value) * 100).toFixed(0)}%` },
+              { key: 'uploadedAt', header: 'Uploaded', render: (value) => formatDate(String(value)) },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (_value, row) => (
+                  <div className="flex gap-2">
+                    {(user?.role === 'Admin' || user?.role === 'Manager') ? (
+                      <button type="button" onClick={() => void handleProcess(row as unknown as InboundDocument)} className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200" disabled={isProcessing === (row as unknown as InboundDocument).id}>
+                        <Sparkles className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200">
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                    {user?.role === 'Admin' ? (
+                      <button type="button" onClick={() => { setDocumentToDelete(row as unknown as InboundDocument); setIsDeleteModalOpen(true); }} className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2 text-rose-300">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                ),
+              },
+            ]}
+            rows={documents as unknown as Array<Record<string, unknown>>}
+          />
+        )}
       </div>
 
       <Modal

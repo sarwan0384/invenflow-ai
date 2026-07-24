@@ -1,5 +1,6 @@
 using InvenFlow.Core.Entities;
 using InvenFlow.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,7 @@ namespace InvenFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class InventoryController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -20,6 +22,7 @@ public class InventoryController : ControllerBase
     // Fetches all inventory items on the warehouse shelves
     [HttpGet]
     [HttpGet("~/api/inventoryitems")]
+    [Authorize(Policy = "RequireEmployeeOrAbove")]
     public async Task<ActionResult<IEnumerable<InventoryItem>>> GetInventory()
     {
         return await _context.InventoryItems.ToListAsync();
@@ -45,9 +48,17 @@ public class InventoryController : ControllerBase
     // Adds a new product item into inventory
     [HttpPost]
     [HttpPost("~/api/inventoryitems")]
+    [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<ActionResult<InventoryItem>> CreateInventoryItem(InventoryItem item)
     {
+        var tenantId = User.FindFirst("tenantId")?.Value;
+        if (!Guid.TryParse(tenantId, out var parsedTenantId))
+        {
+            return Unauthorized(new { message = "Tenant context is missing." });
+        }
+
         item.Id = Guid.NewGuid();
+        item.TenantId = parsedTenantId;
         item.UpdatedAt = DateTime.UtcNow;
 
         _context.InventoryItems.Add(item);
@@ -60,6 +71,7 @@ public class InventoryController : ControllerBase
     // Updates quantity or price for an existing inventory item
     [HttpPut("{id:guid}")]
     [HttpPut("~/api/inventoryitems/{id:guid}")]
+    [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<IActionResult> UpdateInventoryItem(Guid id, [FromBody] InventoryItem updatedItem)
     {
         var existingItem = await _context.InventoryItems.FindAsync(id);
@@ -83,6 +95,7 @@ public class InventoryController : ControllerBase
     // DELETE: api/inventory/{id}
     [HttpDelete("{id:guid}")]
     [HttpDelete("~/api/inventoryitems/{id:guid}")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> DeleteInventoryItem(Guid id)
     {
         var existingItem = await _context.InventoryItems.FindAsync(id);

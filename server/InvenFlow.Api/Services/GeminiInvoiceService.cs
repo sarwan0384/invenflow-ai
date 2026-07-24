@@ -96,4 +96,69 @@ public class GeminiInvoiceService
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         return JsonSerializer.Deserialize<ExtractedInvoiceData>(rawJson, options);
     }
+
+    private Client CreateClient()
+    {
+        return new Client(apiKey: _apiKey);
+    }
+
+    public async Task<List<ExtractedProduct>> ExtractProductsFromHtmlAsync(string html, string sourceUrl)
+    {
+        var client = CreateClient();
+        var promptText = $@"
+Analyze this HTML page from {sourceUrl} and extract all product/inventory items into valid JSON.
+Return only a JSON array of objects with these fields:
+- sku
+- name
+- quantityOnHand
+- unitPrice
+- category
+If a field is missing, use an empty string for sku/category and 0 for quantityOnHand/unitPrice.
+Example:
+[
+  {{ ""sku"": ""ABC123"", ""name"": ""Widget"", ""quantityOnHand"": 10, ""unitPrice"": 12.34, ""category"": ""Hardware"" }}
+]
+Return only JSON, with no markdown fences or extraneous text.
+";
+
+        var contents = new List<Content>
+        {
+            new Content
+            {
+                Role = "user",
+                Parts = new List<Part>
+                {
+                    new Part { Text = promptText },
+                    new Part { Text = html }
+                }
+            }
+        };
+
+        var response = await client.Models.GenerateContentAsync(
+            model: "gemini-2.5-flash",
+            contents: contents
+        );
+
+        string rawJson = response.Text ?? string.Empty;
+        rawJson = rawJson.Replace("```json", "").Replace("```", "").Trim();
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        try
+        {
+            return JsonSerializer.Deserialize<List<ExtractedProduct>>(rawJson, options) ?? new List<ExtractedProduct>();
+        }
+        catch
+        {
+            return new List<ExtractedProduct>();
+        }
+    }
+}
+
+public class ExtractedProduct
+{
+    public string Sku { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public int? QuantityOnHand { get; set; }
+    public decimal? UnitPrice { get; set; }
+    public string Category { get; set; } = string.Empty;
 }

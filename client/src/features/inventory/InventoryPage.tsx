@@ -1,12 +1,14 @@
-import { PackagePlus, Pencil, Trash2, TriangleAlert } from 'lucide-react';
+import { PackagePlus, Pencil, Share2, Trash2, TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AppLayout } from '../../components/shared/AppLayout';
+import { DataTable } from '../../components/shared/DataTable';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { createInventoryItem, deleteInventoryItem, getInventory, updateInventoryItem } from '../../services/api';
+import { createInventoryItem, deleteInventoryItem, getInventory, syncExternalUrl, updateInventoryItem } from '../../services/api';
 import type { InventoryItem } from '../../types';
 import { cn, formatCurrency, formatDate } from '../../lib/utils';
+import { useAuth } from '../../contexts/useAuth';
 
 type InventoryFormState = {
   sku: string;
@@ -25,6 +27,7 @@ const initialFormState: InventoryFormState = {
 };
 
 export function InventoryPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,6 +36,9 @@ export function InventoryPage() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formState, setFormState] = useState<InventoryFormState>(initialFormState);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncUrl, setSyncUrl] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadItems = async () => {
@@ -86,6 +92,12 @@ export function InventoryPage() {
     setSelectedItem(null);
     setFormState(initialFormState);
     setIsModalOpen(true);
+  };
+
+  const openSyncModal = () => {
+    setSyncUrl('');
+    setFeedback(null);
+    setIsSyncModalOpen(true);
   };
 
   const openEditModal = (item: InventoryItem) => {
@@ -161,6 +173,29 @@ export function InventoryPage() {
     }
   };
 
+  const handleExternalSync = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSyncing(true);
+    setFeedback(null);
+
+    try {
+      const result = await syncExternalUrl({ url: syncUrl.trim() });
+      setIsSyncModalOpen(false);
+      setFeedback({
+        type: 'success',
+        message: `External sync complete. ${result.updated} updated, ${result.added} added from ${result.sourceType}.`,
+      });
+      await loadItems();
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Unable to sync external inventory.',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <AppLayout active="/inventory">
       <div className="space-y-6">
@@ -169,10 +204,18 @@ export function InventoryPage() {
             <p className="text-sm text-slate-400">Inventory orchestration</p>
             <h2 className="text-2xl font-semibold text-white">Stock Overview</h2>
           </div>
-          <Button onClick={openCreateModal}>
-            <PackagePlus className="mr-2 h-4 w-4" />
-            Add Stock
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={openSyncModal} variant="secondary">
+              Sync External Link
+            </Button>
+            <Button variant="secondary">Export CSV</Button>
+            <Button variant="secondary">Export Excel</Button>
+            <Button variant="secondary">Export PDF</Button>
+            {(user?.role === 'Admin' || user?.role === 'Manager') ? <Button onClick={openCreateModal}>
+              <PackagePlus className="mr-2 h-4 w-4" />
+              Add Stock
+            </Button> : null}
+          </div>
         </div>
 
         {feedback ? (
@@ -181,64 +224,45 @@ export function InventoryPage() {
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-slate-900/70 shadow-lg shadow-black/10 backdrop-blur-xl">
-          {isLoading ? (
-            <div className="p-8 text-center text-sm text-slate-400">Loading inventory…</div>
-          ) : items.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-400">No inventory records yet.</div>
-          ) : (
-            <table className="min-w-full divide-y divide-white/10 text-sm">
-              <thead className="bg-white/5 text-left text-slate-400">
-                <tr>
-                  <th className="px-4 py-3">SKU</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">On Hand</th>
-                  <th className="px-4 py-3">Unit Price</th>
-                  <th className="px-4 py-3">Updated</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {items.map((item) => {
-                  const badge = statusBadge(item);
-                  return (
-                    <tr key={item.id} className="text-slate-200 transition hover:bg-white/5">
-                      <td className="px-4 py-3 font-medium text-white">{item.sku}</td>
-                      <td className="px-4 py-3">{item.name}</td>
-                      <td className="px-4 py-3">{item.category}</td>
-                      <td className="px-4 py-3">{item.quantityOnHand}</td>
-                      <td className="px-4 py-3">{formatCurrency(item.unitPrice)}</td>
-                      <td className="px-4 py-3">{formatDate(item.updatedAt)}</td>
-                      <td className="px-4 py-3"><Badge tone={badge.tone}>{badge.label}</Badge></td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(item)}
-                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:bg-violet-500/20 hover:text-white"
-                            aria-label={`Edit ${item.name}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openDeleteModal(item)}
-                            className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2 text-rose-300 transition hover:bg-rose-500/20 hover:text-white"
-                            aria-label={`Delete ${item.name}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-slate-400">Loading inventory…</div>
+        ) : items.length === 0 ? (
+          <div className="p-8 text-center text-sm text-slate-400">No inventory records yet.</div>
+        ) : (
+          <DataTable
+            columns={[
+              { key: 'sku', header: 'SKU' },
+              { key: 'name', header: 'Name' },
+              { key: 'category', header: 'Category' },
+              { key: 'quantityOnHand', header: 'On Hand' },
+              { key: 'unitPrice', header: 'Unit Price', render: (value) => formatCurrency(Number(value)) },
+              { key: 'updatedAt', header: 'Updated', render: (value) => formatDate(String(value)) },
+              { key: 'status', header: 'Status', render: (_value, row) => { const badge = statusBadge(row as unknown as InventoryItem); return <Badge tone={badge.tone}>{badge.label}</Badge>; } },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (_value, row) => (
+                  <div className="flex gap-2">
+                    {(user?.role === 'Admin' || user?.role === 'Manager') ? (
+                      <button type="button" onClick={() => openEditModal(row as unknown as InventoryItem)} className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200">
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                    {user?.role === 'Admin' ? (
+                      <button type="button" onClick={() => openDeleteModal(row as unknown as InventoryItem)} className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2 text-rose-300">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                ),
+              },
+            ]}
+            rows={items as unknown as Array<Record<string, unknown>>}
+          />
+        )}
       </div>
 
       <Modal
@@ -313,6 +337,37 @@ export function InventoryPage() {
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {selectedItem ? 'Save Changes' : 'Save Stock'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        title="Sync External Link"
+        description="Enter a public API or product page URL to synchronize external inventory data."
+        size="md"
+      >
+        <form className="space-y-4" onSubmit={handleExternalSync}>
+          <label className="space-y-2 text-sm text-slate-300">
+            <span>URL</span>
+            <input
+              required
+              type="url"
+              value={syncUrl}
+              onChange={(event) => setSyncUrl(event.target.value)}
+              placeholder="https://supplier.example.com/products"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2.5 text-white outline-none ring-0"
+            />
+          </label>
+
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="secondary" onClick={() => setIsSyncModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={isSyncing}>
+              Sync Now
             </Button>
           </div>
         </form>

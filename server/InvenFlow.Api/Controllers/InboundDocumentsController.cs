@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using InvenFlow.Infrastructure.Data;
@@ -16,6 +17,7 @@ public class UploadDocumentDto
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class InboundDocumentsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -28,6 +30,7 @@ public class InboundDocumentsController : ControllerBase
 
     // GET: api/inbounddocuments
     [HttpGet]
+    [Authorize(Policy = "RequireEmployeeOrAbove")]
     public async Task<ActionResult<IEnumerable<InboundDocument>>> GetDocuments()
     {
         return await _context.InboundDocuments.Include(d => d.Vendor).ToListAsync();
@@ -45,6 +48,7 @@ public class InboundDocumentsController : ControllerBase
     // POST: api/inbounddocuments/upload
     [HttpPost("upload")]
     [Consumes("multipart/form-data")]
+    [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<IActionResult> UploadDocument([FromForm] UploadDocumentDto dto, [FromServices] GeminiInvoiceService aiService)
     {
         if (dto.File == null || dto.File.Length == 0)
@@ -103,9 +107,16 @@ public class InboundDocumentsController : ControllerBase
         var filePath = Path.Combine(uploadsFolder, uniqueFileName);
         await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
 
+        var tenantId = User.FindFirst("tenantId")?.Value;
+        if (!Guid.TryParse(tenantId, out var parsedTenantId))
+        {
+            return Unauthorized(new { message = "Tenant context is missing." });
+        }
+
         var document = new InboundDocument
         {
             Id = Guid.NewGuid(),
+            TenantId = parsedTenantId,
             FileName = fileName,
             FilePath = filePath,
             Status = DocumentStatus.Pending,
@@ -125,6 +136,7 @@ public class InboundDocumentsController : ControllerBase
 
     // POST: api/inbounddocuments/{id}/process-ai
     [HttpPost("{id:guid}/process-ai")]
+    [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<IActionResult> ProcessWithAI(Guid id, [FromServices] GeminiInvoiceService aiService)
     {
         var doc = await _context.InboundDocuments.FindAsync(id);
@@ -141,6 +153,7 @@ public class InboundDocumentsController : ControllerBase
 
     // DELETE: api/inbounddocuments/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> DeleteDocument(Guid id)
     {
         var doc = await _context.InboundDocuments.FindAsync(id);
@@ -185,6 +198,7 @@ public class InboundDocumentsController : ControllerBase
                         var newVendor = new Vendor
                         {
                             Id = Guid.NewGuid(),
+                            TenantId = document.TenantId,
                             Name = result.VendorName,
                             ContactPerson = "Extracted from Invoice",
                             Email = $"billing@{result.VendorName.ToLower().Replace(" ", "")}.com",
@@ -210,6 +224,7 @@ public class InboundDocumentsController : ControllerBase
                         _context.InventoryItems.Add(new InventoryItem
                         {
                             Id = Guid.NewGuid(),
+                            TenantId = document.TenantId,
                             Sku = string.IsNullOrWhiteSpace(item.Sku) ? $"SKU-{Guid.NewGuid().ToString()[..6]}" : item.Sku,
                             Name = item.ItemName,
                             Category = "Inbound General",
