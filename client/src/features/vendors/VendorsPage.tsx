@@ -155,9 +155,6 @@ export function VendorsPage() {
             <h2 className="text-2xl font-semibold text-white">Vendor Intelligence</h2>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary">Export CSV</Button>
-            <Button variant="secondary">Export Excel</Button>
-            <Button variant="secondary">Export PDF</Button>
             {(user?.role === 'Admin' || user?.role === 'Manager') ? <Button onClick={openCreateModal}>
               <UserPlus2 className="mr-2 h-4 w-4" />
               Add Vendor
@@ -179,6 +176,8 @@ export function VendorsPage() {
           </div>
         ) : (
           <DataTable
+            data={vendors as unknown as Array<Record<string, unknown>>}
+            fileName="vendors"
             columns={[
               { key: 'name', header: 'Name' },
               { key: 'code', header: 'Code' },
@@ -207,7 +206,6 @@ export function VendorsPage() {
                 ),
               },
             ]}
-            rows={vendors as unknown as Array<Record<string, unknown>>}
           />
         )}
       </div>

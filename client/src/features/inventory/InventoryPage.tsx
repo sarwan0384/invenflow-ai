@@ -208,9 +208,6 @@ export function InventoryPage() {
             <Button onClick={openSyncModal} variant="secondary">
               Sync External Link
             </Button>
-            <Button variant="secondary">Export CSV</Button>
-            <Button variant="secondary">Export Excel</Button>
-            <Button variant="secondary">Export PDF</Button>
             {(user?.role === 'Admin' || user?.role === 'Manager') ? <Button onClick={openCreateModal}>
               <PackagePlus className="mr-2 h-4 w-4" />
               Add Stock
@@ -230,6 +227,8 @@ export function InventoryPage() {
           <div className="p-8 text-center text-sm text-slate-400">No inventory records yet.</div>
         ) : (
           <DataTable
+            data={items as unknown as Array<Record<string, unknown>>}
+            fileName="inventory-items"
             columns={[
               { key: 'sku', header: 'SKU' },
               { key: 'name', header: 'Name' },
@@ -260,7 +259,6 @@ export function InventoryPage() {
                 ),
               },
             ]}
-            rows={items as unknown as Array<Record<string, unknown>>}
           />
         )}
       </div>

@@ -169,9 +169,6 @@ export function DocumentsPage() {
             <h2 className="text-2xl font-semibold text-white">Document Review Queue</h2>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary">Export CSV</Button>
-            <Button variant="secondary">Export Excel</Button>
-            <Button variant="secondary">Export PDF</Button>
             {(user?.role === 'Admin' || user?.role === 'Manager') ? <Button onClick={() => setIsModalOpen(true)}>
               <UploadCloud className="mr-2 h-4 w-4" />
               Upload Document
@@ -191,6 +188,8 @@ export function DocumentsPage() {
           <div className="p-8 text-center text-sm text-slate-400">No documents queued yet.</div>
         ) : (
           <DataTable
+            data={documents as unknown as Array<Record<string, unknown>>}
+            fileName="documents"
             columns={[
               { key: 'fileName', header: 'File' },
               { key: 'status', header: 'Status', render: (value) => { const statusMeta = getStatusMeta(value as string | number); return <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>; } },
@@ -218,7 +217,6 @@ export function DocumentsPage() {
                 ),
               },
             ]}
-            rows={documents as unknown as Array<Record<string, unknown>>}
           />
         )}
       </div>
