@@ -1,6 +1,6 @@
 import type { InventoryItem, InboundDocument, Vendor } from '../types';
 
-const API_BASE_URL = 'http://localhost:5206/api';
+const API_BASE_URL = 'https://invenflow-api.onrender.com';
 
 export function getStoredAuthToken() {
   if (typeof window === 'undefined') return '';
