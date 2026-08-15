@@ -134,6 +134,86 @@ export async function searchContent(query: string) {
   return request<SearchResults>(`/search?q=${encodeURIComponent(query)}`);
 }
 
+export interface UniversalPriceTier {
+  qty: number;
+  unitPrice: number;
+}
+
+export interface UniversalProduct {
+  providerName: string;
+  distiSku: string;
+  partNumber: string;
+  packagingContainer: string;
+  minQty: number;
+  regionStock: string;
+  roHSStatus: string;
+  leadTime: string;
+  itemId: string;
+  category: string;
+  title: string;
+  brandOrManufacturer: string;
+  sku: string;
+  description: string;
+  publicSupplierName: string;
+  supplierRealId: string;
+  directPurchaseUrl: string;
+  vendorCartId: string;
+  availableStock: number;
+  availabilityStatus: string;
+  currency: string;
+  priceBreaks: UniversalPriceTier[];
+  attributes: Record<string, string>;
+}
+
+export interface ProviderResultGroup {
+  providerName: string;
+  results: UniversalProduct[];
+}
+
+export async function searchUniversalProducts(query: string, category: string) {
+  return request<ProviderResultGroup[]>(`/v1/aggregator/search?query=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`);
+}
+
+export interface ProductOffer {
+  providerName: string;
+  supplierRealId: string;
+  partNumber: string;
+  distiSku: string;
+  availableStock: number;
+  leadTime: string;
+  minQty: number;
+  orderMultiple: number;
+  packagingContainer: string;
+  currency: string;
+  bestUnitPrice: number;
+  directPurchaseUrl: string;
+}
+
+export interface ProductDetail {
+  providerName: string;
+  supplierRealId: string;
+  vendorCartId: string;
+  mpn: string;
+  manufacturer: string;
+  category: string;
+  description: string;
+  datasheetUrl: string;
+  directPurchaseUrl: string;
+  availableStock: number;
+  leadTime: string;
+  minQty: number;
+  orderMultiple: number;
+  packagingContainer: string;
+  currency: string;
+  priceBreaks: UniversalPriceTier[];
+  specifications: Record<string, string>;
+  alternateOffers: ProductOffer[];
+}
+
+export async function getProductDetails(supplierRealId: string, mpn: string) {
+  return request<ProductDetail>(`/v1/products/details?supplierRealId=${encodeURIComponent(supplierRealId || '')}&mpn=${encodeURIComponent(mpn)}`);
+}
+
 export async function getDocuments() {
   return request<InboundDocument[]>('/inbounddocuments');
 }

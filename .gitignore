@@ -430,3 +430,11 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Ignore secret configuration files
+appsettings.Local.json
+appsettings.Development.json
+*.secrets.json
+
+# Ignore temporary build folders
+server/_build_temp_api*/

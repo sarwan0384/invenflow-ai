@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using InvenFlow.Api;
+using InvenFlow.Api.Application.ProductDetails;
+using InvenFlow.Api.Application.Search;
 using InvenFlow.Api.Services;
 using InvenFlow.Core.Entities;
 using InvenFlow.Infrastructure.Data;
@@ -27,13 +29,32 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<GeminiInvoiceService>();
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
+builder.Services.AddScoped<IProductAdapter, FetchchipsLocalAdapter>();
+builder.Services.AddHttpClient<IProductAdapter, ArrowElectronicsAdapter>();
+builder.Services.AddHttpClient<IProductAdapter, DigiKeyElectronicsAdapter>();
+builder.Services.AddScoped<ISearchProviderAdapter>(sp => (ISearchProviderAdapter)sp.GetServices<IProductAdapter>().First(a => a is FetchchipsLocalAdapter));
+builder.Services.AddScoped<ISearchProviderAdapter>(sp => (ISearchProviderAdapter)sp.GetServices<IProductAdapter>().First(a => a is ArrowElectronicsAdapter));
+builder.Services.AddScoped<ISearchProviderAdapter>(sp => (ISearchProviderAdapter)sp.GetServices<IProductAdapter>().First(a => a is DigiKeyElectronicsAdapter));
+builder.Services.AddScoped<AggregatorSearchService>();
+builder.Services.Configure<VendorKeyMappingOptions>(builder.Configuration.GetSection("VendorDetails"));
+builder.Services.Configure<ProviderSettings>(builder.Configuration.GetSection("ProviderSettings"));
+builder.Services.AddScoped<IVendorDetailsProvider, DefaultProductDetailsProvider>();
+builder.Services.AddScoped<IVendorDetailsProvider, MockProductDetailsProvider>();
+builder.Services.AddScoped<IVendorKeyMapper, VendorKeyMapper>();
+builder.Services.AddScoped<IVendorDetailsService, VendorOrchestratorService>();
+builder.Services.AddScoped<VendorOrchestratorService>();
 builder.Services.AddHostedService<ExternalLinkMonitorService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -73,9 +94,11 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    db.Database.Migrate();
+
+    await DbInitializer.InitializeAsync(db, startupLogger, app.Lifetime.ApplicationStopping);
 
     foreach (var roleName in new[] { "Admin", "Manager", "Employee" })
     {

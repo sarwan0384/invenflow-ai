@@ -372,13 +372,16 @@ public class SyncController : ControllerBase
         return null;
     }
 
-    private async Task<(int Added, int Updated)> ApplySyncResultsAsync(List<ExtractedProduct> products)
+private async Task<(int Added, int Updated)> ApplySyncResultsAsync(List<ExtractedProduct> products)
     {
         var tenantId = _httpContextAccessor.HttpContext?.User.FindFirst("tenantId")?.Value;
         if (string.IsNullOrWhiteSpace(tenantId) || !Guid.TryParse(tenantId, out var parsedTenantId))
         {
             return (0, 0);
         }
+
+        // Get the default vendor for sync operations (or null if none exists)
+        var defaultVendor = await _context.Vendors.FirstOrDefaultAsync();
 
         var existingItems = await _context.InventoryItems.ToListAsync();
         var updated = 0;
@@ -416,6 +419,7 @@ public class SyncController : ControllerBase
                     QuantityOnHand = product.QuantityOnHand ?? 0,
                     UnitPrice = product.UnitPrice ?? 0m,
                     UpdatedAt = DateTime.UtcNow,
+                    VendorId = defaultVendor?.Id, // Link to default vendor for sync-origin items
                 });
 
                 added++;

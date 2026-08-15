@@ -20,4 +20,8 @@ public class InboundDocument : ITenantOwned
 
     public Guid? VendorId { get; set; }
     public Vendor? Vendor { get; set; }
+
+    // Navigation: InventoryItems generated from this document
+    public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
 }
+

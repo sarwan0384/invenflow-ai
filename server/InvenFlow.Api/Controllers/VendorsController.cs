@@ -90,7 +90,7 @@ public class VendorsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/vendors/{id}
+// DELETE: api/vendors/{id}
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "RequireAdmin")]
     public async Task<IActionResult> DeleteVendor(Guid id)
@@ -101,10 +101,17 @@ public class VendorsController : ControllerBase
             return NotFound(new { message = "Vendor not found." });
         }
 
-        var relatedDocuments = await _context.InboundDocuments.Where(d => d.VendorId == id).ToListAsync();
-        _context.InboundDocuments.RemoveRange(relatedDocuments);
-        _context.Vendors.Remove(vendor);
-        await _context.SaveChangesAsync();
-        return NoContent();
+        try
+        {
+            _context.Vendors.Remove(vendor);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        catch (DbUpdateException)
+        {
+            // DeleteBehavior.Restrict on Vendor -> InboundDocuments and Vendor -> InventoryItems
+            // will prevent deletion if active related records exist
+            return BadRequest(new { message = "Cannot delete vendor because linked documents or inventory items exist. Remove or reassign them first." });
+        }
     }
 }

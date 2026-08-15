@@ -11,4 +11,8 @@ public class Vendor : ITenantOwned
     public string? Phone { get; set; }
     public string? Address { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation collections
+    public ICollection<InboundDocument> InboundDocuments { get; set; } = new List<InboundDocument>();
+    public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
 }

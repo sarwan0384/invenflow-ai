@@ -11,15 +11,19 @@ namespace InvenFlow.Api.Controllers;
 public class SearchController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<SearchController> _logger;
 
-    public SearchController(AppDbContext context)
+    public SearchController(AppDbContext context, ILogger<SearchController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     [HttpGet]
     public async Task<IActionResult> Search([FromQuery] string q)
     {
+        _logger.LogInformation("Legacy /api/search endpoint hit with query {Query}", q);
+
         if (string.IsNullOrWhiteSpace(q))
         {
             return Ok(new { inventory = Array.Empty<object>(), vendors = Array.Empty<object>(), documents = Array.Empty<object>() });

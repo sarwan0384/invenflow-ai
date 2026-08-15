@@ -1,5 +1,6 @@
 import { Activity, Boxes, FileCheck2, TrendingUp, Truck } from 'lucide-react';
 import { AppLayout } from '../../components/shared/AppLayout';
+import ExternalLinkManager from '../../components/shared/ExternalLinkManager';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 
@@ -17,8 +18,14 @@ const recentActivity = [
 ];
 
 export function DashboardPage() {
+  const handleExternalLinkSync = async (url: string) => {
+    console.log('Sync requested for', url);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    return true;
+  };
+
   return (
-    <AppLayout active="/">
+    <AppLayout active="/operations">
       <div className="space-y-6">
         <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -97,6 +104,10 @@ export function DashboardPage() {
               ))}
             </div>
           </article>
+        </section>
+
+        <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
+          <ExternalLinkManager onSync={handleExternalLinkSync} />
         </section>
       </div>
     </AppLayout>

@@ -45,7 +45,7 @@ public class InventoryController : ControllerBase
     }
 
     // POST: api/inventory
-    // Adds a new product item into inventory
+    // Adds a new product item into inventory (Manual Add / Add Stock)
     [HttpPost]
     [HttpPost("~/api/inventoryitems")]
     [Authorize(Policy = "RequireManagerOrAdmin")]
@@ -69,24 +69,26 @@ public class InventoryController : ControllerBase
 
     // PUT: api/inventory/{id}
     // Updates quantity or price for an existing inventory item
+    // Preserves existing TenantId, VendorId, and InboundDocumentId
     [HttpPut("{id:guid}")]
     [HttpPut("~/api/inventoryitems/{id:guid}")]
     [Authorize(Policy = "RequireManagerOrAdmin")]
     public async Task<IActionResult> UpdateInventoryItem(Guid id, [FromBody] InventoryItem updatedItem)
     {
-        var existingItem = await _context.InventoryItems.FindAsync(id);
+        var existingItem = await _context.InventoryItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
         if (existingItem == null)
         {
             return NotFound(new { message = "Item not found." });
         }
 
-        existingItem.Name = string.IsNullOrWhiteSpace(updatedItem.Name) ? existingItem.Name : updatedItem.Name;
-        existingItem.Sku = string.IsNullOrWhiteSpace(updatedItem.Sku) ? existingItem.Sku : updatedItem.Sku;
-        existingItem.Category = string.IsNullOrWhiteSpace(updatedItem.Category) ? existingItem.Category : updatedItem.Category;
-        existingItem.QuantityOnHand = updatedItem.QuantityOnHand;
-        existingItem.UnitPrice = updatedItem.UnitPrice;
-        existingItem.UpdatedAt = DateTime.UtcNow;
+        // Preserve immutable foreign keys and tenant context
+        updatedItem.Id = id;
+        updatedItem.TenantId = existingItem.TenantId;
+        updatedItem.VendorId = existingItem.VendorId;
+        updatedItem.InboundDocumentId = existingItem.InboundDocumentId;
+        updatedItem.UpdatedAt = DateTime.UtcNow;
 
+        _context.InventoryItems.Update(updatedItem);
         await _context.SaveChangesAsync();
 
         return NoContent();
@@ -104,9 +106,16 @@ public class InventoryController : ControllerBase
             return NotFound(new { message = "Item not found." });
         }
 
-        _context.InventoryItems.Remove(existingItem);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.InventoryItems.Remove(existingItem);
+            await _context.SaveChangesAsync();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest(new { message = "Cannot delete inventory item due to existing references." });
+        }
     }
 }

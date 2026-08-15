@@ -180,39 +180,113 @@ namespace InvenFlow.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("ContainerType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("container_type");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DistiSku")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("disti_sku");
+
+                    b.Property<Guid?>("InboundDocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inbound_document_id");
+
+                    b.Property<string>("Manufacturer")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("manufacturer");
+
+                    b.Property<int>("MinQty")
+                        .HasColumnType("integer")
+                        .HasColumnName("min_qty");
+
+                    b.Property<string>("Mpn")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("mpn");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PriceTiersJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("price_tiers_json");
 
                     b.Property<int>("QuantityOnHand")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity_on_hand");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("region");
 
                     b.Property<string>("Sku")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("sku");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("integer")
+                        .HasColumnName("stock");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(12, 2)
-                        .HasColumnType("numeric(12,2)");
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("unit_price");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("VendorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vendor_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InboundDocumentId");
+
+                    b.HasIndex("VendorId");
+
+                    b.HasIndex("TenantId", "Mpn");
 
                     b.HasIndex("TenantId", "Sku")
                         .IsUnique();
 
-                    b.ToTable("InventoryItems");
+                    b.ToTable("inventory_items", (string)null);
                 });
 
             modelBuilder.Entity("InvenFlow.Core.Entities.Notification", b =>
@@ -450,8 +524,26 @@ namespace InvenFlow.Infrastructure.Migrations
             modelBuilder.Entity("InvenFlow.Core.Entities.InboundDocument", b =>
                 {
                     b.HasOne("InvenFlow.Core.Entities.Vendor", "Vendor")
-                        .WithMany()
-                        .HasForeignKey("VendorId");
+                        .WithMany("InboundDocuments")
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Vendor");
+                });
+
+            modelBuilder.Entity("InvenFlow.Core.Entities.InventoryItem", b =>
+                {
+                    b.HasOne("InvenFlow.Core.Entities.InboundDocument", "InboundDocument")
+                        .WithMany("InventoryItems")
+                        .HasForeignKey("InboundDocumentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("InvenFlow.Core.Entities.Vendor", "Vendor")
+                        .WithMany("InventoryItems")
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("InboundDocument");
 
                     b.Navigation("Vendor");
                 });
@@ -505,6 +597,18 @@ namespace InvenFlow.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("InvenFlow.Core.Entities.InboundDocument", b =>
+                {
+                    b.Navigation("InventoryItems");
+                });
+
+            modelBuilder.Entity("InvenFlow.Core.Entities.Vendor", b =>
+                {
+                    b.Navigation("InboundDocuments");
+
+                    b.Navigation("InventoryItems");
                 });
 #pragma warning restore 612, 618
         }

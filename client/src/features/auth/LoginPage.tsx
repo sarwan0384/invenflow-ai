@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/useAuth';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const routeError = searchParams.get('error');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -37,6 +39,7 @@ export function LoginPage() {
           <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
           <p className="text-sm text-slate-400">Secure multi-tenant workspace for modern operations teams.</p>
         </div>
+        {routeError ? <div className="mb-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{routeError}</div> : null}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block text-sm text-slate-300">
             <span className="mb-2 block">Email</span>
