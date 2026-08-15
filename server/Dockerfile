@@ -1,18 +1,23 @@
-# Use official .NET SDK image to build the app
+# 1. SDK Image for building the app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy project file and restore dependencies
-COPY ["YourProjectName.csproj", "./"]
-RUN dotnet restore "YourProjectName.csproj"
+# Copy project files from server directory
+COPY ["InvenFlow.Api/InvenFlow.Api.csproj", "InvenFlow.Api/"]
+COPY ["InvenFlow.Core/InvenFlow.Core.csproj", "InvenFlow.Core/"]
+COPY ["InvenFlow.Infrastructure/InvenFlow.Infrastructure.csproj", "InvenFlow.Infrastructure/"]
 
-# Copy everything else and build
+# Restore dependencies
+RUN dotnet restore "InvenFlow.Api/InvenFlow.Api.csproj"
+
+# Copy everything else and build Release binaries
 COPY . .
-RUN dotnet build "YourProjectName.csproj" -c Release -o /app/build
-RUN dotnet publish "YourProjectName.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR "/src/InvenFlow.Api"
+RUN dotnet build "InvenFlow.Api.csproj" -c Release -o /app/build
+RUN dotnet publish "InvenFlow.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Use runtime image for lightweight production container
+# 2. Runtime Image for running the app
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "YourProjectName.dll"]
+ENTRYPOINT ["dotnet", "InvenFlow.Api.dll"]
