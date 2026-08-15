@@ -14,7 +14,7 @@ export function RegisterPage() {
     setError('');
     try {
       const normalizedEmail = formState.email.trim().toLowerCase();
-      const response = await fetch('http://localhost:5206/api/auth/register', {
+      const response = await fetch('https://prochips-api.onrender.com/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formState, email: normalizedEmail }),

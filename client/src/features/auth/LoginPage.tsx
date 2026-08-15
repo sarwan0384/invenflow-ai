@@ -17,7 +17,7 @@ export function LoginPage() {
     setError('');
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const response = await fetch('http://localhost:5206/api/auth/login', {
+      const response = await fetch('https://prochips-api.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: normalizedEmail, password }),

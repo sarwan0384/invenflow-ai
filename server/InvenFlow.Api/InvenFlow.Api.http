@@ -1,4 +1,4 @@
-@InvenFlow.Api_HostAddress = http://localhost:5206
+@InvenFlow.Api_HostAddress = https://prochips-api.onrender.com
 
 GET {{InvenFlow.Api_HostAddress}}/weatherforecast/
 Accept: application/json
