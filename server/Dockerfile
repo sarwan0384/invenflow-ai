@@ -1,5 +1,5 @@
-# 1. SDK Image for building the app
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# 1. SDK Image for building the app (.NET 10.0)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files from server directory
@@ -16,8 +16,8 @@ WORKDIR "/src/InvenFlow.Api"
 RUN dotnet build "InvenFlow.Api.csproj" -c Release -o /app/build
 RUN dotnet publish "InvenFlow.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# 2. Runtime Image for running the app
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# 2. Runtime Image for running the app (.NET 10.0)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "InvenFlow.Api.dll"]
