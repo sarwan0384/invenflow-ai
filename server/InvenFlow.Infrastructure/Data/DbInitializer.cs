@@ -9,7 +9,10 @@ public static class DbInitializer
 {
     public static async Task InitializeAsync(AppDbContext dbContext, ILogger logger, CancellationToken cancellationToken = default)
     {
-        await dbContext.Database.MigrateAsync(cancellationToken);
+        if (builder.Environment.IsDevelopment())
+            {
+                await dbContext.Database.MigrateAsync();
+            }
 
         var tenant = await EnsureDefaultTenantAsync(dbContext, cancellationToken);
         await SeedBav99InventoryAsync(dbContext, tenant.Id, logger, cancellationToken);
