@@ -13,6 +13,10 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ensure Kestrel binds to 0.0.0.0 on Render's PORT environment variable immediately
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
@@ -91,57 +95,64 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+// Run DB Migrations and Seeding asynchronously AFTER Kestrel starts binding to the port
+app.Lifetime.ApplicationStarted.Register(async () =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var startupLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-    await DbInitializer.InitializeAsync(db, startupLogger, app.Lifetime.ApplicationStopping);
-
-    foreach (var roleName in new[] { "Admin", "Manager", "Employee" })
+    using (var scope = app.Services.CreateScope())
     {
-        if (!await roleManager.RoleExistsAsync(roleName))
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var startupLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        try
         {
-            await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
-        }
-    }
+            await DbInitializer.InitializeAsync(db, startupLogger, app.Lifetime.ApplicationStopping);
 
-    var adminEmail = builder.Configuration["Admin:Email"];
-    var adminPassword = builder.Configuration["Admin:Password"];
-    if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
-    {
-        // No bootstrap admin configured; continue serving the API normally.
-    }
-    else
-    {
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser == null)
-    {
-        var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Slug == "invenflow-hq");
-        if (tenant == null)
-        {
-            tenant = new Tenant { Name = "InvenFlow HQ", Slug = "invenflow-hq" };
-            db.Tenants.Add(tenant);
-            await db.SaveChangesAsync();
-        }
-        adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, DisplayName = "System Admin", TenantId = tenant.Id, EmailConfirmed = true };
-            try
+            foreach (var roleName in new[] { "Admin", "Manager", "Employee" })
             {
-                var result = await userManager.CreateAsync(adminUser, adminPassword);
-                if (result.Succeeded)
+                if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                    await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
                 }
             }
-            catch (Exception ex) when (ex.InnerException?.Message?.Contains("duplicate") ?? false)
+
+            var adminEmail = builder.Configuration["Admin:Email"];
+            var adminPassword = builder.Configuration["Admin:Password"];
+            if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
             {
-                // User already exists, skip creation
+                var adminUser = await userManager.FindByEmailAsync(adminEmail);
+                if (adminUser == null)
+                {
+                    var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Slug == "invenflow-hq");
+                    if (tenant == null)
+                    {
+                        tenant = new Tenant { Name = "InvenFlow HQ", Slug = "invenflow-hq" };
+                        db.Tenants.Add(tenant);
+                        await db.SaveChangesAsync();
+                    }
+                    adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, DisplayName = "System Admin", TenantId = tenant.Id, EmailConfirmed = true };
+                    try
+                    {
+                        var result = await userManager.CreateAsync(adminUser, adminPassword);
+                        if (result.Succeeded)
+                        {
+                            await userManager.AddToRoleAsync(adminUser, "Admin");
+                        }
+                    }
+                    catch (Exception ex) when (ex.InnerException?.Message?.Contains("duplicate") ?? false)
+                    {
+                        // User already exists, skip creation
+                    }
+                }
             }
         }
+        catch (Exception ex)
+        {
+            startupLogger.LogError(ex, "An error occurred while initializing the database.");
+        }
     }
-}
+});
 
 app.UseCors("AllowReactApp");
 app.UseSwagger();
@@ -151,13 +162,10 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Retrieve port from environment or fallback to 8080
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Run($"http://0.0.0.0:{port}");
+app.Run();
