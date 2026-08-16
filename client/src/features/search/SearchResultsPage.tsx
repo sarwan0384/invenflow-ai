@@ -250,7 +250,7 @@ export function SearchResultsPage() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
           <Link to="/" className="whitespace-nowrap text-sm font-semibold uppercase tracking-[0.22em] text-slate-800">
-            InvenFlow
+            ProChips
           </Link>
 
           <form onSubmit={submitSearch} className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
