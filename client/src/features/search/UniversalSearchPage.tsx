@@ -4,7 +4,7 @@ import { AppLayout } from '../../components/shared/AppLayout';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 
-type Category = 'Electronics' | 'Watches' | 'Perfumes';
+type Category = 'Electronics' | 'Watches';
 
 type MarketplaceRow = {
   id: string;
@@ -88,7 +88,6 @@ export function UniversalSearchPage() {
               >
                 <option value="Electronics" className="bg-slate-900">Electronics</option>
                 <option value="Watches" className="bg-slate-900" disabled>Watches (Upcoming)</option>
-                <option value="Perfumes" className="bg-slate-900" disabled>Perfumes (Upcoming)</option>
               </select>
             </label>
 

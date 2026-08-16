@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { SearchHeaderActions } from '../../components/navigation/SearchHeaderActions';
 
-type Category = 'Electronics' | 'Watches' | 'Perfumes';
+type Category = 'Electronics' | 'Watches';
 
 const quickExamples = ['BAV99', '1N4148W'];
 
@@ -52,7 +52,6 @@ export function SearchLandingPage() {
                 >
                   <option value="Electronics" className="bg-slate-900">Electronics</option>
                   <option value="Watches" className="bg-slate-900" disabled>Watches (Coming Soon)</option>
-                  <option value="Perfumes" className="bg-slate-900" disabled>Perfumes (Coming Soon)</option>
                 </select>
               </div>
 
