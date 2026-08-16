@@ -7,6 +7,7 @@ namespace InvenFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/aggregator")]
+[Route("v1/aggregator")] // Secondary route so calls missing '/api' still resolve correctly
 public class AggregatorSearchController : ControllerBase
 {
     private readonly AggregatorSearchService _searchService;
@@ -33,7 +34,13 @@ public class AggregatorSearchController : ControllerBase
             return Ok(Array.Empty<object>());
         }
 
-        var grouped = await _searchService.SearchAsync(query, category, strategyMode, preferredProvider, HttpContext.RequestAborted);
+        var grouped = await _searchService.SearchAsync(
+            query, 
+            category, 
+            strategyMode, 
+            preferredProvider, 
+            HttpContext.RequestAborted);
+
         return Ok(grouped);
     }
 
@@ -60,7 +67,12 @@ public class AggregatorSearchController : ControllerBase
 
         _logger.LogInformation("Starting aggregator SSE stream for query {Query} and category {Category}", query, category);
 
-        await foreach (var item in _searchService.SearchStreamAsync(query, category, strategyMode, preferredProvider, HttpContext.RequestAborted))
+        await foreach (var item in _searchService.SearchStreamAsync(
+            query, 
+            category, 
+            strategyMode, 
+            preferredProvider, 
+            HttpContext.RequestAborted))
         {
             var payload = JsonSerializer.Serialize(item);
             await Response.WriteAsync("event: result\n");

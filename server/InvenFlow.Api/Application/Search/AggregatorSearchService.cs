@@ -38,10 +38,13 @@ public class AggregatorSearchService
             return new List<ProviderResultGroupDto>();
         }
 
+        // Resolves from appsettings/dynamic settings if strategyModeOverride is null
         var strategyMode = ResolveStrategyMode(strategyModeOverride);
         var providerKeys = ResolveProviderKeys(strategyMode, preferredProviderOverride);
 
-        _logger.LogInformation("Aggregator search started for query {Query}, category {Category}, strategy {Strategy}, provider keys {ProviderKeys}", query, category, strategyMode, string.Join(",", providerKeys));
+        _logger.LogInformation(
+            "Aggregator search started for query {Query}, category {Category}, strategy {Strategy}, provider keys {ProviderKeys}", 
+            query, category, strategyMode, string.Join(",", providerKeys));
 
         if (providerKeys.Count == 0)
         {
@@ -57,7 +60,10 @@ public class AggregatorSearchService
         };
     }
 
-    private async Task<List<ProviderResultGroupDto>> ExecuteSingleProviderAsync(string query, string providerKey, CancellationToken cancellationToken)
+    private async Task<List<ProviderResultGroupDto>> ExecuteSingleProviderAsync(
+        string query, 
+        string providerKey, 
+        CancellationToken cancellationToken)
     {
         var result = await ExecuteProviderAsync(providerKey, query, cancellationToken);
         return result.Results.Count == 0
@@ -65,7 +71,10 @@ public class AggregatorSearchService
             : new List<ProviderResultGroupDto> { result };
     }
 
-    private async Task<List<ProviderResultGroupDto>> ExecuteParallelAsync(string query, List<string> providerKeys, CancellationToken cancellationToken)
+    private async Task<List<ProviderResultGroupDto>> ExecuteParallelAsync(
+        string query, 
+        List<string> providerKeys, 
+        CancellationToken cancellationToken)
     {
         var tasks = providerKeys
             .Select(providerKey => ExecuteProviderAsync(providerKey, query, cancellationToken))
@@ -77,7 +86,10 @@ public class AggregatorSearchService
             .ToList();
     }
 
-    private async Task<List<ProviderResultGroupDto>> ExecuteFallbackChainAsync(string query, List<string> providerKeys, CancellationToken cancellationToken)
+    private async Task<List<ProviderResultGroupDto>> ExecuteFallbackChainAsync(
+        string query, 
+        List<string> providerKeys, 
+        CancellationToken cancellationToken)
     {
         foreach (var providerKey in providerKeys)
         {
@@ -91,7 +103,10 @@ public class AggregatorSearchService
         return new List<ProviderResultGroupDto>();
     }
 
-    private async Task<ProviderResultGroupDto> ExecuteProviderAsync(string providerKey, string query, CancellationToken cancellationToken)
+    private async Task<ProviderResultGroupDto> ExecuteProviderAsync(
+        string providerKey, 
+        string query, 
+        CancellationToken cancellationToken)
     {
         if (string.Equals(providerKey, "MOCK", StringComparison.OrdinalIgnoreCase))
         {
@@ -123,7 +138,9 @@ public class AggregatorSearchService
                 .ThenBy(x => x.SKU)
                 .ToList();
 
-            _logger.LogInformation("Provider {ProviderKey} adapter {AdapterName} returned {Count} results for query {Query}", providerKey, adapter.GetType().Name, ordered.Count, query);
+            _logger.LogInformation(
+                "Provider {ProviderKey} adapter {AdapterName} returned {Count} results for query {Query}", 
+                providerKey, adapter.GetType().Name, ordered.Count, query);
 
             return new ProviderResultGroupDto
             {
@@ -133,7 +150,11 @@ public class AggregatorSearchService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Provider {ProviderKey} adapter {AdapterName} failed for query {Query}", providerKey, adapter.GetType().Name, query);
+            _logger.LogError(
+                ex, 
+                "Provider {ProviderKey} adapter {AdapterName} failed for query {Query}", 
+                providerKey, adapter.GetType().Name, query);
+
             return new ProviderResultGroupDto
             {
                 ProviderName = providerName,
@@ -185,6 +206,8 @@ public class AggregatorSearchService
     private StrategyMode ResolveStrategyMode(string? strategyOverride)
     {
         var normalized = NormalizeStrategyName(strategyOverride);
+
+        // Fallback to configured settings if override was omitted or empty
         if (string.IsNullOrWhiteSpace(normalized))
         {
             normalized = NormalizeStrategyName(_providerSettings.StrategyMode);
