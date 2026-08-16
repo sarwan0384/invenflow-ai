@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, FileText, LayoutGrid, Package2, Truck, ChevronLeft, ChevronRight, SendToBackIcon, SendToBack, ArrowRight, ArrowLeftIcon } from 'lucide-react';
+import { BarChart3, Boxes, FileText, LayoutGrid, Package2, Truck, ChevronLeft, ChevronRight, ArrowLeftIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDocuments } from '../../services/api';
