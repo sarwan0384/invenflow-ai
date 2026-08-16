@@ -59,11 +59,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function getInventory() {
-  return request<InventoryItem[]>('/inventoryitems');
+  return request<InventoryItem[]>('/api/inventoryitems');
 }
 
 export async function createInventoryItem(payload: Record<string, unknown>) {
-  return request<InventoryItem>('/inventoryitems', {
+  return request<InventoryItem>('/api/inventoryitems', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -71,7 +71,7 @@ export async function createInventoryItem(payload: Record<string, unknown>) {
 }
 
 export async function updateInventoryItem(id: string, payload: Record<string, unknown>) {
-  return request<InventoryItem>(`/inventoryitems/${id}`, {
+  return request<InventoryItem>(`/api/inventoryitems/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -79,7 +79,7 @@ export async function updateInventoryItem(id: string, payload: Record<string, un
 }
 
 export async function deleteInventoryItem(id: string) {
-  return request<void>(`/inventoryitems/${id}`, {
+  return request<void>(`/api/inventoryitems/${id}`, {
     method: 'DELETE',
   });
 }
@@ -91,7 +91,7 @@ export interface SyncExternalUrlResult {
 }
 
 export async function syncExternalUrl(payload: { url: string }) {
-  return request<SyncExternalUrlResult>('/sync/external-url', {
+  return request<SyncExternalUrlResult>('/api/sync/external-url', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -99,11 +99,11 @@ export async function syncExternalUrl(payload: { url: string }) {
 }
 
 export async function getVendors() {
-  return request<Vendor[]>('/vendors');
+  return request<Vendor[]>('/api/vendors');
 }
 
 export async function createVendor(payload: Record<string, unknown>) {
-  return request<Vendor>('/vendors', {
+  return request<Vendor>('/api/vendors', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -111,7 +111,7 @@ export async function createVendor(payload: Record<string, unknown>) {
 }
 
 export async function updateVendor(id: string, payload: Record<string, unknown>) {
-  return request<Vendor>(`/vendors/${id}`, {
+  return request<Vendor>(`/api/vendors/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -119,7 +119,7 @@ export async function updateVendor(id: string, payload: Record<string, unknown>)
 }
 
 export async function deleteVendor(id: string) {
-  return request<void>(`/vendors/${id}`, {
+  return request<void>(`/api/vendors/${id}`, {
     method: 'DELETE',
   });
 }
@@ -131,7 +131,7 @@ export interface SearchResults {
 }
 
 export async function searchContent(query: string) {
-  return request<SearchResults>(`/search?q=${encodeURIComponent(query)}`);
+  return request<SearchResults>(`/api/search?q=${encodeURIComponent(query)}`);
 }
 
 export interface UniversalPriceTier {
@@ -215,24 +215,24 @@ export async function getProductDetails(supplierRealId: string, mpn: string) {
 }
 
 export async function getDocuments() {
-  return request<InboundDocument[]>('/inbounddocuments');
+  return request<InboundDocument[]>('/api/inbounddocuments');
 }
 
 export async function uploadDocument(formData: FormData) {
-  return request<InboundDocument>('/inbounddocuments/upload', {
+  return request<InboundDocument>('/api/inbounddocuments/upload', {
     method: 'POST',
     body: formData,
   });
 }
 
 export async function processDocument(id: string) {
-  return request<InboundDocument>(`/inbounddocuments/${id}/process-ai`, {
+  return request<InboundDocument>(`/api/inbounddocuments/${id}/process-ai`, {
     method: 'POST',
   });
 }
 
 export async function deleteDocument(id: string) {
-  return request<void>(`/inbounddocuments/${id}`, {
+  return request<void>(`/api/inbounddocuments/${id}`, {
     method: 'DELETE',
   });
 }
