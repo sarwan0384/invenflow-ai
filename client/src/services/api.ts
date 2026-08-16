@@ -171,7 +171,7 @@ export interface ProviderResultGroup {
 }
 
 export async function searchUniversalProducts(query: string, category: string) {
-  return request<ProviderResultGroup[]>(`/v1/aggregator/search?query=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`);
+  return request<ProviderResultGroup[]>(`/api//v1/aggregator/search?query=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`);
 }
 
 export interface ProductOffer {
@@ -211,7 +211,7 @@ export interface ProductDetail {
 }
 
 export async function getProductDetails(supplierRealId: string, mpn: string) {
-  return request<ProductDetail>(`/v1/products/details?supplierRealId=${encodeURIComponent(supplierRealId || '')}&mpn=${encodeURIComponent(mpn)}`);
+  return request<ProductDetail>(`/api//v1/products/details?supplierRealId=${encodeURIComponent(supplierRealId || '')}&mpn=${encodeURIComponent(mpn)}`);
 }
 
 export async function getDocuments() {
