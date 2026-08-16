@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, FileText, LayoutGrid, Package2, Search, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, Boxes, FileText, LayoutGrid, Package2, Truck, ChevronLeft, ChevronRight, SendToBackIcon, SendToBack, ArrowRight, ArrowLeftIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDocuments } from '../../services/api';
@@ -6,7 +6,7 @@ import type { InboundDocument } from '../../types';
 import { cn } from '../../lib/utils';
 
 const navItems = [
-  { label: 'Universal Search', href: '/', icon: Search },
+  { label: 'Return to Main App', href: '/', icon: ArrowLeftIcon },
   { label: 'Overview', href: '/operations', icon: LayoutGrid },
   { label: 'Inventory', href: '/inventory', icon: Boxes },
   { label: 'Vendors', href: '/vendors', icon: Truck },
