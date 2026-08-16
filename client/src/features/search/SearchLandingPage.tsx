@@ -28,13 +28,13 @@ export function SearchLandingPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,_rgba(254,154,46,0.18),_transparent_35%),radial-gradient(circle_at_80%_15%,_rgba(45,212,191,0.12),_transparent_35%),linear-gradient(160deg,_#05070f_0%,_#0b1220_50%,_#12161f_100%)] px-4 py-10 text-slate-100">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 py-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">InvenFlow</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">ProChips</p>
         <SearchHeaderActions />
       </header>
 
       <div className="mx-auto flex min-h-[80vh] w-full max-w-6xl items-center justify-center">
         <section className="w-full max-w-4xl text-center">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.35em] text-orange-300/90">InvenFlow Marketplace</p>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.35em] text-orange-300/90">ProChips Marketplace</p>
           <h1 className="text-balance text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
             Universal Part & Product Search
           </h1>

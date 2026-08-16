@@ -32,7 +32,7 @@ export function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(120,119,198,0.2),_transparent_25%),linear-gradient(135deg,_#020617,_#0f172a_55%,_#111827)] p-6">
       <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-slate-900/70 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl">
         <div className="mb-6 space-y-2">
-          <p className="text-sm uppercase tracking-[0.3em] text-violet-300">InvenFlow AI</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-violet-300">ProChips AI</p>
           <h1 className="text-2xl font-semibold text-white">Create your tenant workspace</h1>
           <p className="text-sm text-slate-400">Launch a secure company profile with role-based controls from day one.</p>
         </div>

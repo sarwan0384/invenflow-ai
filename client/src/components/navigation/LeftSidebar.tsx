@@ -45,7 +45,7 @@ export function LeftSidebar({ active = '/' }: Props) {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/20">
             <Package2 className="h-5 w-5" />
           </div>
-          {!collapsed ? <div><p className="text-sm font-semibold text-white">InvenFlow AI</p><p className="text-xs text-slate-400">Command Center</p></div> : null}
+          {!collapsed ? <div><p className="text-sm font-semibold text-white">ProChips AI</p><p className="text-xs text-slate-400">Command Center</p></div> : null}
         </div>
         <button type="button" onClick={() => setCollapsed((v) => !v)} className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white">
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

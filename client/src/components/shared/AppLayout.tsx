@@ -61,7 +61,7 @@ export function AppLayout({ children, active = '/' }: Props) {
           <header className="border-b border-white/10 bg-slate-950/70 px-6 py-4 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.3em] text-violet-300">InvenFlow AI</p>
+                <p className="text-sm font-medium uppercase tracking-[0.3em] text-violet-300">ProChips AI</p>
                 <h1 className="text-xl font-semibold text-white">Operations Intelligence Console</h1>
               </div>
               <div className="flex flex-wrap items-center gap-3">

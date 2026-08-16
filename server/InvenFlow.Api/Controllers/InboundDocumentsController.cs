@@ -251,7 +251,7 @@ public class InboundDocumentsController : ControllerBase
                             ContactPerson = "Extracted from Invoice",
                             Email = $"billing@{result.VendorName.ToLower().Replace(" ", "")}.com",
                             Phone = "N/A",
-                            Address = "Extracted by InvenFlow AI"
+                            Address = "Extracted by ProChips AI"
                         };
 
                         _context.Vendors.Add(newVendor);
